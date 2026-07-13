@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>ระบบส่งงานซ่อม | Le Raffine Sukhumvit 24</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --navy-900:#0b1533;
+    --navy-800:#101d47;
+    --navy-700:#16255c;
+    --navy-600:#1e3170;
+    --gold-500:#c9a24b;
+    --gold-400:#dabb70;
+    --gold-100:#f4e9d0;
+    --cream:#faf7f0;
+    --paper:#ffffff;
+    --ink:#1c2130;
+    --muted:#6b7180;
+    --line:#e7e2d4;
+    --danger:#a1382f;
+    --ok:#2f6d4f;
+    --radius:14px;
+    --shadow:0 10px 30px rgba(11,21,51,.10);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Sarabun',sans-serif;}
+  h1,h2,h3,.display{font-family:'Playfair Display',serif;}
+
+  /* header */
+  .topbar{
+    background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
+    color:#fff;padding:22px 20px 26px;position:relative;overflow:hidden;
+  }
+  .topbar::after{
+    content:'';position:absolute;inset:auto -20% -60% -20%;height:160px;
+    background:radial-gradient(closest-side, rgba(201,162,75,.25), transparent 70%);
+  }
+  .topbar-inner{position:relative;max-width:960px;margin:0 auto;}
+  .eyebrow{letter-spacing:.14em;font-size:11px;text-transform:uppercase;color:var(--gold-400);font-weight:600;}
+  .topbar h1{margin:4px 0 2px;font-size:26px;font-weight:700;}
+  .topbar p{margin:0;font-size:13px;color:#c9cfe6;}
+  .gold-rule{height:2px;width:56px;background:var(--gold-500);margin-top:12px;border-radius:2px;}
+
+  .tabs{
+    display:flex;max-width:960px;margin:-18px auto 0;position:relative;z-index:2;
+    background:var(--paper);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .tab{flex:1;padding:14px 10px;text-align:center;font-weight:600;font-size:14.5px;color:var(--muted);cursor:pointer;transition:.2s;}
+  .tab.active{color:var(--navy-800);background:var(--gold-100);}
+  .tab:not(.active):hover{background:#f5f2e8;}
+
+  .wrap{max-width:960px;margin:0 auto;padding:24px 16px 80px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px;}
+  .section-title{display:flex;align-items:center;gap:8px;margin:0 0 16px;font-size:18px;color:var(--navy-800);}
+  .section-title .dot{width:8px;height:8px;border-radius:50%;background:var(--gold-500);}
+
+  label{display:block;font-size:13.5px;font-weight:600;color:var(--navy-800);margin:14px 0 6px;}
+  label.first{margin-top:0;}
+  input[type=text],input[type=date],select,textarea{
+    width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:'Sarabun',sans-serif;font-size:14.5px;background:#fff;color:var(--ink);transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(201,162,75,.18);}
+  textarea{min-height:88px;resize:vertical;}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+
+  .upload-zone{
+    border:2px dashed var(--gold-400);border-radius:12px;padding:22px 14px;text-align:center;
+    background:var(--gold-100);cursor:pointer;transition:.15s;
+  }
+  .upload-zone:hover{background:#f0e4c4;}
+  .upload-zone strong{color:var(--navy-800);display:block;margin-bottom:2px;}
+  .upload-zone span{font-size:12.5px;color:var(--muted);}
+  #photoInput{display:none;}
+
+  .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;margin-top:14px;}
+  .thumb{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1/1;border:1px solid var(--line);background:#eee;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb button{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;
+    background:rgba(20,20,30,.65);color:#fff;font-size:13px;cursor:pointer;line-height:1;
+  }
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:12px 20px;border-radius:10px;border:none;font-weight:600;font-size:14.5px;
+    cursor:pointer;transition:.15s;font-family:'Sarabun',sans-serif;
+  }
+  .btn-primary{background:var(--navy-800);color:#fff;width:100%;margin-top:20px;}
+  .btn-primary:hover{background:var(--navy-700);}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--navy-800);}
+  .btn-ghost:hover{border-color:var(--gold-500);}
+  .btn-gold{background:var(--gold-500);color:var(--navy-900);}
+  .btn-gold:hover{background:var(--gold-400);}
+  .btn-sm{padding:8px 12px;font-size:13px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--navy-900);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;
+    box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:100;
+    border:1px solid var(--gold-500);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* filters */
+  .filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .filter-row select,.filter-row input{flex:1;min-width:130px;}
+
+  .job-card{
+    background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;
+    display:flex;gap:12px;cursor:pointer;transition:.15s;
+  }
+  .job-card:hover{border-color:var(--gold-500);box-shadow:var(--shadow);}
+  .job-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--gold-100);}
+  .job-info{flex:1;min-width:0;}
+  .job-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .job-id{font-weight:700;color:var(--navy-800);font-size:14.5px;}
+  .job-date{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .job-meta{font-size:13px;color:var(--muted);margin-top:3px;}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--gold-100);color:var(--navy-800);margin-top:6px;}
+  .photo-count{font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:4px;}
+
+  .empty{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty .display{font-size:20px;color:var(--navy-800);margin-bottom:6px;}
+
+  /* modal */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(11,21,51,.55);display:none;align-items:flex-end;justify-content:center;
+    z-index:200;backdrop-filter:blur(2px);
+  }
+  .modal-bg.show{display:flex;}
+  .modal{
+    background:var(--paper);width:100%;max-width:640px;max-height:88vh;overflow-y:auto;
+    border-radius:18px 18px 0 0;padding:22px 20px 30px;animation:slideup .25s ease;
+  }
+  @media(min-width:700px){
+    .modal-bg{align-items:center;}
+    .modal{border-radius:18px;}
+  }
+  @keyframes slideup{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .modal-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;}
+  .detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px;}
+  .detail-row .k{color:var(--muted);flex-shrink:0;}
+  .detail-row .v{text-align:right;font-weight:600;color:var(--ink);}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:14px;}
+  .gallery-item{position:relative;}
+  .gallery-item img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--line);display:block;}
+  .gallery-item .dlBtn{
+    position:absolute;bottom:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;
+    background:rgba(11,21,51,.75);color:#fff;font-size:12px;cursor:pointer;line-height:1;
+  }
+
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px;}
+  .lightbox-close{position:absolute;top:18px;right:20px;color:#fff;font-size:28px;background:none;border:none;cursor:pointer;}
+  .lightbox-download{position:absolute;top:20px;right:64px;color:#fff;font-size:14px;background:rgba(201,162,75,.9);border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'Sarabun',sans-serif;font-weight:600;}
+
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .modal-actions .btn{flex:1;}
+
+  footer{text-align:center;font-size:11.5px;color:var(--muted);padding:20px;}
+
+  .tech-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .tech-row input{flex:1;padding:8px 10px;font-size:14px;}
+  .tech-row button{background:none;border:none;cursor:pointer;font-size:15px;color:var(--muted);padding:4px 6px;}
+  .tech-row button.saveTechBtn{color:var(--ok);}
+  .tech-row button.delTechBtn{color:var(--danger);}
+  .tech-row .tech-name{flex:1;font-size:14.5px;font-weight:500;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="eyebrow">Le Raffine Sukhumvit 24 · Technical Service</div>
+    <h1>ระบบส่งงานซ่อม</h1>
+    <p>บันทึกงานเสร็จพร้อมรูปภาพ และดูประวัติย้อนหลังได้ทุกที่</p>
+    <div class="gold-rule"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="submit">ส่งงานใหม่</div>
+  <div class="tab" data-tab="history">ประวัติงาน</div>
+</div>
+
+<div class="wrap">
+
+  <!-- SUBMIT TAB -->
+  <div id="tab-submit">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>ข้อมูลผู้ปฏิบัติงาน</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label class="first" style="margin:0;">ชื่อช่างผู้ปฏิบัติงาน *</label>
+        <button type="button" id="manageTechBtn" style="background:none;border:none;color:var(--navy-700);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline;padding:0;">⚙ จัดการรายชื่อช่าง</button>
+      </div>
+      <input type="text" id="fTech" list="techList" placeholder="เช่น ช่างสมชาย" style="margin-top:6px;">
+      <datalist id="techList"></datalist>
+
+      <label>เลขที่ใบแจ้งซ่อม (LR-XXXX/year)</label>
+      <input type="text" id="fDocNo" placeholder="เช่น LR-0231/2569">
+
+      <label>เลขห้อง *</label>
+      <input type="text" id="fRoom" placeholder="เช่น 12A">
+
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <label style="margin:14px 0 0;">ประเภทงาน *</label>
+        <button type="button" id="manageTypeBtn" style="background:none;border:none;color:var(--navy-700);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:underline;padding:0;">⚙ จัดการประเภทงาน</button>
+      </div>
+      <input type="text" id="fType" list="typeList" placeholder="เช่น งานประปา" style="margin-top:6px;">
+      <datalist id="typeList"></datalist>
+
+      <label>รายละเอียดงานที่ดำเนินการ *</label>
+      <textarea id="fDetail" placeholder="อธิบายสิ่งที่ตรวจพบและวิธีแก้ไข"></textarea>
+
+      <label>วันที่ทำงานเสร็จ *</label>
+      <input type="date" id="fDate">
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>รูปภาพหน้างาน</div>
+      <div class="upload-zone" id="dropZone">
+        <strong>แตะเพื่อแนบรูปภาพ</strong>
+        <span>แนบได้ไม่จำกัดจำนวนรูป · JPG/PNG · ระบบจะย่อขนาดให้อัตโนมัติ</span>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" multiple>
+      <div class="thumb-grid" id="thumbGrid"></div>
+      <div class="hint" id="photoHint"></div>
+    </div>
+
+    <button class="btn btn-primary" id="submitBtn">✓ บันทึกและส่งงาน</button>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none;">
+    <div class="card">
+      <div class="filter-row">
+        <select id="filterTech"><option value="">ช่างทั้งหมด</option></select>
+        <select id="filterType"><option value="">ประเภทงานทั้งหมด</option></select>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="filterSearch" placeholder="ค้นหาเลขห้อง / เลขใบแจ้งซ่อม...">
+        <select id="sortOrder" style="max-width:160px;">
+          <option value="dateDesc">ล่าสุดก่อน</option>
+          <option value="dateAsc">เก่าสุดก่อน</option>
+          <option value="techAsc">ชื่อช่าง ก-ฮ</option>
+          <option value="techDesc">ชื่อช่าง ฮ-ก</option>
+          <option value="roomAsc">เลขห้อง ก-ฮ</option>
+          <option value="roomDesc">เลขห้อง ฮ-ก</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <button class="btn btn-ghost btn-sm" id="exportBtn" style="width:100%;">⬇ Export Excel</button>
+      </div>
+    </div>
+
+    <div id="jobList"></div>
+  </div>
+
+</div>
+
+<footer>Le Raffine Sukhumvit 24 · ระบบส่งงานซ่อมภายใน · ข้อมูลจัดเก็บในเครื่องนี้เท่านั้น</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- Detail modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="display" style="margin:0;color:var(--navy-800);" id="modalTitle">รายละเอียดงาน</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold" id="modalDownloadAll">⬇ ดาวน์โหลดรูปทั้งหมด</button>
+      <button class="btn btn-ghost" id="modalDelete">ลบรายการนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage job types modal -->
+<div class="modal-bg" id="typeModalBg">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <h3 class="display" style="margin:0;color:var(--navy-800);">จัดการประเภทงาน</h3>
+      <button class="modal-close" id="typeModalClose">×</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="text" id="newTypeInput" placeholder="ประเภทงานใหม่..." style="flex:1;">
+      <button class="btn btn-gold btn-sm" id="addTypeBtn">+ เพิ่ม</button>
+    </div>
+    <div id="typeEditList"></div>
+    <div class="hint" style="margin-top:10px;">แก้ชื่อ = แก้ในรายการนี้เท่านั้น ไม่เปลี่ยนประเภทในงานที่บันทึกไปแล้ว</div>
+  </div>
+</div>
+
+<!-- Manage technicians modal -->
+<div class="modal-bg" id="techModalBg">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <h3 class="display" style="margin:0;color:var(--navy-800);">จัดการรายชื่อช่าง</h3>
+      <button class="modal-close" id="techModalClose">×</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <input type="text" id="newTechInput" placeholder="ชื่อช่างใหม่..." style="flex:1;">
+      <button class="btn btn-gold btn-sm" id="addTechBtn">+ เพิ่ม</button>
+    </div>
+    <div id="techEditList"></div>
+    <div class="hint" style="margin-top:10px;">แก้ชื่อ = แก้ในรายการนี้เท่านั้น ไม่เปลี่ยนชื่อในงานที่บันทึกไปแล้ว</div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">×</button>
+  <button class="lightbox-download" id="lightboxDownload">⬇ ดาวน์โหลดรูปนี้</button>
+  <img id="lightboxImg" src="">
+</div>
+
+<script>
+(function(){
+  const STORE_KEY = 'leraffine_repair_jobs_v1';
+  const TECH_KEY = 'leraffine_repair_techs_v1';
+  const TYPE_KEY = 'leraffine_repair_types_v1';
+  let jobs = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+  let techs = JSON.parse(localStorage.getItem(TECH_KEY) || '["ช่างสมชาย","ช่างประยุทธ","ช่างวินัย"]');
+  let types = JSON.parse(localStorage.getItem(TYPE_KEY) || '["งานประปา","งานไฟฟ้า","งานแอร์","งานโครงสร้าง/ผนัง","งานลิฟต์","งานสระว่ายน้ำ","งานสวน/ภูมิทัศน์","งานอื่นๆ"]');
+  let pendingPhotos = []; // {dataUrl}
+
+  const $ = id => document.getElementById(id);
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const target = t.dataset.tab;
+      $('tab-submit').style.display = target==='submit' ? '' : 'none';
+      $('tab-history').style.display = target==='history' ? '' : 'none';
+      if(target==='history') renderJobList();
+    });
+  });
+
+  // ---- Tech datalist ----
+  function refreshTechList(){
+    $('techList').innerHTML = techs.map(t=>`<option value="${t}">`).join('');
+    $('filterTech').innerHTML = '<option value="">ช่างทั้งหมด</option>' + techs.map(t=>`<option>${t}</option>`).join('');
+  }
+  refreshTechList();
+
+  // ---- Manage technicians modal ----
+  function renderTechEditList(){
+    if(techs.length === 0){
+      $('techEditList').innerHTML = `<div class="hint" style="text-align:center;padding:14px 0;">ยังไม่มีรายชื่อช่าง เพิ่มรายชื่อด้านบนได้เลย</div>`;
+      return;
+    }
+    $('techEditList').innerHTML = techs.map((t,i)=>`
+      <div class="tech-row" data-i="${i}">
+        <span class="tech-name">${t}</span>
+        <button class="editTechBtn" title="แก้ไขชื่อ">✎</button>
+        <button class="delTechBtn" title="ลบ">🗑</button>
+      </div>`).join('');
+
+    document.querySelectorAll('.editTechBtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const row = b.closest('.tech-row');
+        const i = +row.dataset.i;
+        row.innerHTML = `
+          <input type="text" value="${techs[i]}" class="editTechInput">
+          <button class="saveTechBtn" title="บันทึก">✓</button>
+          <button class="delTechBtn" title="ยกเลิก">✕</button>`;
+        const input = row.querySelector('.editTechInput');
+        input.focus();
+        input.select();
+        row.querySelector('.saveTechBtn').addEventListener('click', ()=> saveTechEdit(i, input.value));
+        input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveTechEdit(i, input.value); });
+        row.querySelector('.delTechBtn').addEventListener('click', renderTechEditList); // cancel = just re-render
+      });
+    });
+    document.querySelectorAll('.tech-row > .delTechBtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const i = +b.closest('.tech-row').dataset.i;
+        if(!confirm(`ลบ "${techs[i]}" ออกจากรายชื่อ? (งานที่บันทึกไปแล้วจะไม่ถูกลบ)`)) return;
+        techs.splice(i,1);
+        saveTechs();
+      });
+    });
+  }
+
+  function saveTechEdit(i, newName){
+    newName = newName.trim();
+    if(!newName){ showToast('กรุณากรอกชื่อ'); return; }
+    techs[i] = newName;
+    saveTechs();
+  }
+
+  function saveTechs(){
+    localStorage.setItem(TECH_KEY, JSON.stringify(techs));
+    refreshTechList();
+    renderTechEditList();
+  }
+
+  $('addTechBtn').addEventListener('click', ()=>{
+    const name = $('newTechInput').value.trim();
+    if(!name){ showToast('กรุณากรอกชื่อช่าง'); return; }
+    if(techs.includes(name)){ showToast('มีชื่อนี้อยู่แล้ว'); return; }
+    techs.push(name);
+    $('newTechInput').value = '';
+    saveTechs();
+  });
+  $('newTechInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') $('addTechBtn').click(); });
+
+  $('manageTechBtn').addEventListener('click', ()=>{
+    renderTechEditList();
+    $('techModalBg').classList.add('show');
+  });
+  $('techModalClose').addEventListener('click', ()=> $('techModalBg').classList.remove('show'));
+  $('techModalBg').addEventListener('click', (e)=>{ if(e.target===$('techModalBg')) $('techModalBg').classList.remove('show'); });
+
+  // ---- Manage job types modal ----
+  function refreshTypeList(){
+    $('typeList').innerHTML = types.map(t=>`<option value="${t}">`).join('');
+    const cur = $('filterType').value;
+    $('filterType').innerHTML = '<option value="">ประเภทงานทั้งหมด</option>' + types.map(t=>`<option>${t}</option>`).join('');
+    $('filterType').value = cur;
+  }
+  refreshTypeList();
+
+  function renderTypeEditList(){
+    if(types.length === 0){
+      $('typeEditList').innerHTML = `<div class="hint" style="text-align:center;padding:14px 0;">ยังไม่มีประเภทงาน เพิ่มรายการด้านบนได้เลย</div>`;
+      return;
+    }
+    $('typeEditList').innerHTML = types.map((t,i)=>`
+      <div class="tech-row" data-i="${i}">
+        <span class="tech-name">${t}</span>
+        <button class="editTypeBtn" title="แก้ไข">✎</button>
+        <button class="delTypeBtn" title="ลบ">🗑</button>
+      </div>`).join('');
+
+    document.querySelectorAll('.editTypeBtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const row = b.closest('.tech-row');
+        const i = +row.dataset.i;
+        row.innerHTML = `
+          <input type="text" value="${types[i]}" class="editTypeInput">
+          <button class="saveTypeBtn" title="บันทึก">✓</button>
+          <button class="delTypeBtn" title="ยกเลิก">✕</button>`;
+        const input = row.querySelector('.editTypeInput');
+        input.focus();
+        input.select();
+        row.querySelector('.saveTypeBtn').addEventListener('click', ()=> saveTypeEdit(i, input.value));
+        input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') saveTypeEdit(i, input.value); });
+        row.querySelector('.delTypeBtn').addEventListener('click', renderTypeEditList);
+      });
+    });
+    document.querySelectorAll('.tech-row > .delTypeBtn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const i = +b.closest('.tech-row').dataset.i;
+        if(!confirm(`ลบ "${types[i]}" ออกจากรายการ? (งานที่บันทึกไปแล้วจะไม่ถูกลบ)`)) return;
+        types.splice(i,1);
+        saveTypes();
+      });
+    });
+  }
+
+  function saveTypeEdit(i, newName){
+    newName = newName.trim();
+    if(!newName){ showToast('กรุณากรอกชื่อประเภทงาน'); return; }
+    types[i] = newName;
+    saveTypes();
+  }
+
+  function saveTypes(){
+    localStorage.setItem(TYPE_KEY, JSON.stringify(types));
+    refreshTypeList();
+    renderTypeEditList();
+  }
+
+  $('addTypeBtn').addEventListener('click', ()=>{
+    const name = $('newTypeInput').value.trim();
+    if(!name){ showToast('กรุณากรอกประเภทงาน'); return; }
+    if(types.includes(name)){ showToast('มีประเภทนี้อยู่แล้ว'); return; }
+    types.push(name);
+    $('newTypeInput').value = '';
+    saveTypes();
+  });
+  $('newTypeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') $('addTypeBtn').click(); });
+
+  $('manageTypeBtn').addEventListener('click', ()=>{
+    renderTypeEditList();
+    $('typeModalBg').classList.add('show');
+  });
+  $('typeModalClose').addEventListener('click', ()=> $('typeModalBg').classList.remove('show'));
+  $('typeModalBg').addEventListener('click', (e)=>{ if(e.target===$('typeModalBg')) $('typeModalBg').classList.remove('show'); });
+
+  // ---- Photo upload with compression ----
+  $('dropZone').addEventListener('click', ()=> $('photoInput').click());
+  $('photoInput').addEventListener('change', async (e)=>{
+    const files = Array.from(e.target.files);
+    for(const f of files){
+      const compressed = await compressImage(f, 1280, 0.72);
+      pendingPhotos.push(compressed);
+    }
+    renderThumbs();
+    e.target.value = '';
+  });
+
+  function compressImage(file, maxDim, quality){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        img.onload = ()=>{
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = h*(maxDim/w); w = maxDim; }
+          else if(h > maxDim){ w = w*(maxDim/h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderThumbs(){
+    $('thumbGrid').innerHTML = pendingPhotos.map((p,i)=>`
+      <div class="thumb">
+        <img src="${p}">
+        <button data-i="${i}" class="removeThumb">×</button>
+      </div>`).join('');
+    $('photoHint').textContent = pendingPhotos.length ? `แนบแล้ว ${pendingPhotos.length} รูป` : '';
+    document.querySelectorAll('.removeThumb').forEach(b=>{
+      b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        pendingPhotos.splice(+b.dataset.i,1);
+        renderThumbs();
+      });
+    });
+  }
+
+  // ---- Submit ----
+  $('submitBtn').addEventListener('click', ()=>{
+    const tech = $('fTech').value.trim();
+    const docNo = $('fDocNo').value.trim();
+    const room = $('fRoom').value.trim();
+    const type = $('fType').value.trim();
+    const detail = $('fDetail').value.trim();
+    const date = $('fDate').value;
+
+    if(!tech || !room || !type || !detail || !date){
+      showToast('กรุณากรอกข้อมูลให้ครบทุกช่องที่มี *');
+      return;
+    }
+    if(pendingPhotos.length === 0){
+      showToast('กรุณาแนบรูปภาพอย่างน้อย 1 รูป');
+      return;
+    }
+
+    const job = {
+      id: 'JB-' + String(Date.now()).slice(-6),
+      tech, docNo, room, type, detail, date,
+      photos: pendingPhotos.slice(),
+      createdAt: new Date().toISOString()
+    };
+    jobs.unshift(job);
+    localStorage.setItem(STORE_KEY, JSON.stringify(jobs));
+
+    if(!techs.includes(tech)){
+      techs.push(tech);
+      localStorage.setItem(TECH_KEY, JSON.stringify(techs));
+      refreshTechList();
+    }
+    if(!types.includes(type)){
+      types.push(type);
+      localStorage.setItem(TYPE_KEY, JSON.stringify(types));
+      refreshTypeList();
+    }
+
+    // reset form
+    $('fTech').value=''; $('fDocNo').value=''; $('fRoom').value=''; $('fType').value='';
+    $('fDetail').value=''; $('fDate').value='';
+    pendingPhotos = [];
+    renderThumbs();
+    showToast('บันทึกงาน ' + job.id + ' เรียบร้อยแล้ว ✓');
+  });
+
+  // ---- History list ----
+  function renderJobList(){
+    const techF = $('filterTech').value;
+    const typeF = $('filterType').value;
+    const searchF = $('filterSearch').value.trim().toLowerCase();
+    const sortV = $('sortOrder').value;
+
+    let list = jobs.filter(j=>{
+      if(techF && j.tech !== techF) return false;
+      if(typeF && j.type !== typeF) return false;
+      if(searchF && !j.room.toLowerCase().includes(searchF) && !(j.docNo||'').toLowerCase().includes(searchF) && !j.id.toLowerCase().includes(searchF)) return false;
+      return true;
+    });
+
+    list = list.slice().sort((a,b)=>{
+      switch(sortV){
+        case 'dateAsc': return new Date(a.date) - new Date(b.date);
+        case 'techAsc': return a.tech.localeCompare(b.tech, 'th');
+        case 'techDesc': return b.tech.localeCompare(a.tech, 'th');
+        case 'roomAsc': return a.room.localeCompare(b.room, 'th', {numeric:true});
+        case 'roomDesc': return b.room.localeCompare(a.room, 'th', {numeric:true});
+        case 'dateDesc':
+        default: return new Date(b.date) - new Date(a.date);
+      }
+    });
+
+    if(list.length === 0){
+      $('jobList').innerHTML = `<div class="empty"><div class="display">ยังไม่มีประวัติงาน</div>ส่งงานใหม่จากแท็บ "ส่งงานใหม่" เพื่อเริ่มบันทึกประวัติ</div>`;
+      return;
+    }
+
+    $('jobList').innerHTML = list.map(j=>`
+      <div class="job-card" data-id="${j.id}">
+        <img class="job-thumb" src="${j.photos[0]}">
+        <div class="job-info">
+          <div class="job-top">
+            <span class="job-id">${j.docNo || 'ไม่มีเลขที่ใบแจ้งซ่อม'} · ห้อง ${j.room}</span>
+            <span class="job-date">${formatDate(j.date)}</span>
+          </div>
+          <div class="job-meta">${j.tech}${j.docNo ? ' · ' + j.docNo : ''}</div>
+          <span class="badge">${j.type}</span>
+          <div class="photo-count">📷 ${j.photos.length} รูป</div>
+        </div>
+      </div>`).join('');
+
+    document.querySelectorAll('.job-card').forEach(el=>{
+      el.addEventListener('click', ()=> openDetail(el.dataset.id));
+    });
+  }
+
+  ['filterTech','filterType','sortOrder'].forEach(id=> $(id).addEventListener('change', renderJobList));
+  $('filterSearch').addEventListener('input', renderJobList);
+
+  function formatDate(iso){
+    const d = new Date(iso);
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+  }
+
+  function fileLabel(j){
+    const raw = j.docNo || j.room || j.id;
+    return raw.replace(/[\\/:*?"<>|]/g, '-');
+  }
+
+  // ---- Detail modal ----
+  let activeJobId = null;
+  function openDetail(id){
+    const j = jobs.find(x=>x.id===id);
+    if(!j) return;
+    activeJobId = id;
+    $('modalTitle').textContent = (j.docNo || 'ไม่มีเลขที่ใบแจ้งซ่อม') + ' · ห้อง ' + j.room;
+    $('modalBody').innerHTML = `
+      <div class="detail-row"><span class="k">ช่างผู้ปฏิบัติงาน</span><span class="v">${j.tech}</span></div>
+      <div class="detail-row"><span class="k">เลขห้อง</span><span class="v">${j.room}</span></div>
+      <div class="detail-row"><span class="k">ประเภทงาน</span><span class="v">${j.type}</span></div>
+      <div class="detail-row"><span class="k">วันที่เสร็จงาน</span><span class="v">${formatDate(j.date)}</span></div>
+      <div class="detail-row"><span class="k">รายละเอียด</span><span class="v" style="text-align:left;max-width:65%;">${j.detail}</span></div>
+      <div class="gallery">${j.photos.map((p,i)=>`
+        <div class="gallery-item">
+          <img src="${p}" class="galleryImg" data-i="${i}">
+          <button class="dlBtn" data-i="${i}" title="ดาวน์โหลดรูปนี้">⬇</button>
+        </div>`).join('')}</div>
+    `;
+    document.querySelectorAll('.galleryImg').forEach(img=>{
+      img.addEventListener('click', ()=>{
+        $('lightboxImg').src = img.src;
+        $('lightbox').classList.add('show');
+      });
+    });
+    document.querySelectorAll('.dlBtn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const i = +btn.dataset.i;
+        downloadDataUrl(j.photos[i], `${fileLabel(j)}_${j.room}_${i+1}.jpg`);
+      });
+    });
+    $('modalBg').classList.add('show');
+  }
+  $('modalClose').addEventListener('click', ()=> $('modalBg').classList.remove('show'));
+  $('modalBg').addEventListener('click', (e)=>{ if(e.target===$('modalBg')) $('modalBg').classList.remove('show'); });
+  $('modalDelete').addEventListener('click', ()=>{
+    if(!confirm('ยืนยันการลบรายการนี้? รูปภาพจะถูกลบถาวร')) return;
+    jobs = jobs.filter(j=>j.id!==activeJobId);
+    localStorage.setItem(STORE_KEY, JSON.stringify(jobs));
+    $('modalBg').classList.remove('show');
+    renderJobList();
+    showToast('ลบรายการเรียบร้อยแล้ว');
+  });
+
+  // ---- Downloads ----
+  function downloadDataUrl(dataUrl, filename){
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  $('modalDownloadAll').addEventListener('click', async ()=>{
+    const j = jobs.find(x=>x.id===activeJobId);
+    if(!j || j.photos.length===0) return;
+    if(j.photos.length === 1){
+      downloadDataUrl(j.photos[0], `${fileLabel(j)}_${j.room}_1.jpg`);
+      return;
+    }
+    showToast('กำลังรวมไฟล์ ZIP...');
+    const zip = new JSZip();
+    j.photos.forEach((p,i)=>{
+      const base64 = p.split(',')[1];
+      zip.file(`${fileLabel(j)}_${j.room}_${i+1}.jpg`, base64, {base64:true});
+    });
+    const blob = await zip.generateAsync({type:'blob'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileLabel(j)}_${j.room}_รูปภาพ.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('ดาวน์โหลดรูปทั้งหมดเรียบร้อยแล้ว');
+  });
+
+  $('lightboxDownload').addEventListener('click', ()=>{
+    const j = jobs.find(x=>x.id===activeJobId);
+    downloadDataUrl($('lightboxImg').src, `${j ? fileLabel(j) : activeJobId}_รูป.jpg`);
+  });
+
+  $('lightboxClose').addEventListener('click', ()=> $('lightbox').classList.remove('show'));
+  $('lightbox').addEventListener('click', (e)=>{ if(e.target===$('lightbox')) $('lightbox').classList.remove('show'); });
+
+  // ---- Export Excel ----
+  $('exportBtn').addEventListener('click', ()=>{
+    if(jobs.length===0){ showToast('ยังไม่มีข้อมูลให้ export'); return; }
+    const rows = jobs.map(j=>({
+      'เลขที่ใบแจ้งซ่อม': j.docNo || '',
+      'เลขห้อง': j.room,
+      'ช่าง': j.tech,
+      'ประเภทงาน': j.type,
+      'รายละเอียด': j.detail,
+      'วันที่เสร็จ': formatDate(j.date),
+      'จำนวนรูป': j.photos.length
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:16},{wch:10},{wch:16},{wch:14},{wch:40},{wch:14},{wch:10}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ประวัติงานซ่อม');
+    XLSX.writeFile(wb, 'ประวัติงานซ่อม_LeRaffine.xlsx');
+    showToast('Export ไฟล์ Excel เรียบร้อยแล้ว (รูปภาพต้องดูในระบบนี้)');
+  });
+
+  // ---- Toast ----
+  let toastTimer;
+  function showToast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+  }
+
+  // default date = today
+  $('fDate').value = new Date().toISOString().slice(0,10);
+
+})();
+</script>
+</body>
+</html>
